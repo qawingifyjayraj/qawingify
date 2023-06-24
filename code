@@ -1,0 +1,97 @@
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class LoginPageTest {
+    public static void main(String[] args) {
+        // Set the path to the ChromeDriver executable
+        System.setProperty("webdriver.chrome.driver", "path/to/chromedriver");
+
+        // Create a new instance of the ChromeDriver
+        WebDriver driver = new ChromeDriver();
+
+        try {
+            // Test the Login Page
+            testLoginPage(driver);
+
+            // Test the Home Page
+            testHomePage(driver);
+        } finally {
+            // Close the browser
+            driver.quit();
+        }
+    }
+
+    private static void testLoginPage(WebDriver driver) {
+        // Open the Login Page
+        driver.get("URL_OF_THE_LOGIN_PAGE");
+
+        // Perform login with valid credentials
+        login(driver, "validUsername", "validPassword");
+        // TODO: Add assertions or verification steps for successful login
+    }
+
+    private static void testHomePage(WebDriver driver) {
+        // Open the Home Page
+        driver.get("URL_OF_THE_HOME_PAGE");
+
+        // Perform login with valid credentials
+        login(driver, "validUsername", "validPassword");
+        // TODO: Add assertions or verification steps for successful login
+
+        // Click on the AMOUNT header to sort values
+        clickAmountHeader(driver);
+
+        // Get the transaction table rows
+        List<WebElement> transactionRows = driver.findElements(By.xpath("//table[@id='transactionTable']/tbody/tr"));
+
+        // Get the transaction amounts from the first column of each row
+        List<Double> amounts = new ArrayList<>();
+        for (WebElement row : transactionRows) {
+            WebElement amountElement = row.findElement(By.xpath("./td[1]"));
+            String amountText = amountElement.getText().replace("$", "");
+            double amount = Double.parseDouble(amountText);
+            amounts.add(amount);
+        }
+
+        // Verify that the amounts are sorted in descending order
+        List<Double> sortedAmounts = new ArrayList<>(amounts);
+        Collections.sort(sortedAmounts, Collections.reverseOrder());
+
+        assert amounts.equals(sortedAmounts) : "Transaction amounts are not sorted in descending order";
+    }
+
+    private static void login(WebDriver driver, String username, String password) {
+        WebElement usernameInput = driver.findElement(By.id("username"));
+        WebElement passwordInput = driver.findElement(By.id("password"));
+        WebElement loginButton = driver.findElement(By.id("log-in"));
+
+        usernameInput.clear();
+        usernameInput.sendKeys(username);
+
+        passwordInput.clear();
+        passwordInput.sendKeys(password);
+
+        loginButton.click();
+
+        // Wait until the page finishes loading
+        WebDriverWait wait = new WebDriverWait(driver, 10);
+        wait.until(ExpectedConditions.titleContains("Home Page"));
+    }
+
+    private static void clickAmountHeader(WebDriver driver) {
+        WebElement amountHeader = driver.findElement(By.xpath("//th[text()='AMOUNT']"));
+        amountHeader.click();
+        
+        // Wait until the table is sorted
+        WebDriverWait wait = new WebDriverWait(driver, 10);
+        wait.until(ExpectedConditions.attributeContains(amountHeader, "aria-sort", "descending"));
+    }
+}
